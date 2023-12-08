@@ -7,6 +7,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
     [System.Serializable]
     public class BookmarkData : IEnumerable<string> {
         const string PATH_BOOKMARK = "BookmarkAndHistory/MizoresBookmark.json";
+        [SerializeField]
         List<string> bookmark = new  List<string>();
 
         public void Save( ) {
