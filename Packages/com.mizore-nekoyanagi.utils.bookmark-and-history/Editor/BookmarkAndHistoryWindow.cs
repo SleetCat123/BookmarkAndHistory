@@ -87,10 +87,11 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 if ( obj != null ) {
                     if ( Selection.activeObject == obj ) {
                         AssetDatabase.OpenAsset( obj );
+                    } else {
+                        Selection.activeObject = obj;
+                        EditorGUIUtility.PingObject( obj );
+                        //prevSelectedPath = item;
                     }
-                    Selection.activeObject = obj;
-                    EditorGUIUtility.PingObject( obj );
-                    //prevSelectedPath = item;
                 }
             }
         }
