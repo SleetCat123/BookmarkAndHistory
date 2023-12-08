@@ -1,0 +1,22 @@
+{
+  "name": "com.mizore-nekoyanagi.utils.bookmark-and-history",
+  "version": "1.0.0",
+  "displayName": "BookmarkAndHistory",
+  "description": "選択したファイル／フォルダの履歴を表示したり、ブックマークしたりできるウィンドウを追加します。",
+  "author": {
+    "name" : "Mizore Nekoyanagi"
+  },
+  "keywords": [
+    "MizoreNekoyanagi",
+    "Script",
+    "EditorWindow",
+    "Bookmark",
+    "History",
+    "FileList",
+    "FolderList",
+    "AssetList"
+  ],
+  "documentationUrl": "https://github.com/SleetCat123/BookmarkAndHistory",
+  "license": "MIT",
+  "licensesUrl": "https://github.com/SleetCat123/BookmarkAndHistory/blob/main/LICENSE"
+}
