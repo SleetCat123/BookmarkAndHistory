@@ -47,6 +47,8 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 var path = bookmark.bookmark[index];
                 DrawElement( rect, path, false, folderWidth: 280 );
             };
+            reorderableList.headerHeight = 0;
+            reorderableList.footerHeight = 0;
             reorderableList.showDefaultBackground = false;
         }
 
