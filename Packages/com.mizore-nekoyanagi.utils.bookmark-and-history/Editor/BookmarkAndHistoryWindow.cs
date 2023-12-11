@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
@@ -18,6 +19,8 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         BookmarkData bookmark = new BookmarkData();
         //[SerializeField]
         //BookmarkAndHistoryWindowSettings settings = new BookmarkAndHistoryWindowSettings( );
+
+        ReorderableList reorderableList;
 
         string prevSelectedPath;
 
@@ -38,6 +41,13 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             bookmark.Load( );
             history.Load( );
             //settings.Load( );
+
+            reorderableList = new ReorderableList( bookmark.bookmark, typeof( string ), true, false, false, false );
+            reorderableList.drawElementCallback = ( rect, index, isActive, isFocused ) => {
+                var path = bookmark.bookmark[index];
+                DrawElement( rect, path, false, folderWidth: 280 );
+            };
+            reorderableList.showDefaultBackground = false;
         }
 
         private void Update( ) {
@@ -53,7 +63,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             history.AddHisotry( selectObj );
             Repaint( );
         }
-        void DrawElement( string path, bool keepHistoryOrder ) {
+        void DrawElement( Rect rowRect, string path, bool keepHistoryOrder, float folderWidth ) {
             var obj = AssetDatabase.LoadAssetAtPath<Object>( path );
 
             var style = new GUIStyle( EditorStyles.label );
@@ -66,19 +76,16 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
 
             bool b;
             using ( new EditorGUILayout.HorizontalScope( ) ) {
-                var starButtonRect = EditorGUILayout.GetControlRect( GUILayout.Width( 25 ) );
-                var assetRect = EditorGUILayout.GetControlRect( GUILayout.MinWidth( 200 ) );
-                var fullPathrect = EditorGUILayout.GetControlRect( GUILayout.MinWidth( 700 ) );
-                var rect = new Rect(starButtonRect.position, new Vector2(fullPathrect.xMax, fullPathrect.height));
-
                 var temp_contentColor = GUI.contentColor;
                 if ( Selection.activeObject == obj ) {
-                    EditorGUI.DrawRect( rect, new Color( 1f, 1f, 1f, 0.1f ) );
+                    EditorGUI.DrawRect( rowRect, new Color( 1f, 1f, 1f, 0.1f ) );
                 }
                 if ( !bookmark.Contains( path ) ) {
                     GUI.contentColor = Color.white * 0.65f;
                 }
-                if ( GUI.Button( starButtonRect, Content_Star ) ) {
+                var rect = rowRect;
+                rect.width = 25;
+                if ( GUI.Button( rect, Content_Star ) ) {
                     if ( bookmark.Contains( path ) ) {
                         bookmark.RemoveBookmark( path );
                         history.AddHisotry( path );
@@ -88,8 +95,12 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 }
                 GUI.contentColor = temp_contentColor;
                 var icon = AssetDatabase.GetCachedIcon( path );
-                b = GUI.Button( assetRect, new GUIContent( fileName, icon, path ), style );
-                b |= GUI.Button( fullPathrect, path, styleSub );
+                rect.x += rect.width;
+                rect.width = folderWidth;
+                b = GUI.Button( rect, new GUIContent( fileName, icon, path ), style );
+                rect.x += rect.width;
+                rect.width = rowRect.xMax - rect.x;
+                b |= GUI.Button( rect, new GUIContent( path, path ), styleSub );
             }
             var folder = obj as DefaultAsset;
             if ( b && obj != null ) {
@@ -110,11 +121,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         private void OnGUI( ) {
             EditorGUILayout.LabelField( "Bookmark", EditorStyles.boldLabel );
             scroll_Bookmark = EditorGUILayout.BeginScrollView( scroll_Bookmark, GUILayout.MinHeight( 300 ) );
-            var bookmarks =  bookmark.Reverse( );
-            foreach ( var item in bookmarks ) {
-                DrawElement( item, false );
-
-            }
+            reorderableList.DoLayoutList( );
             EditorGUILayout.EndScrollView( );
 
             EditorGUILayout.Separator( );
@@ -123,7 +130,8 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             scroll_History = EditorGUILayout.BeginScrollView( scroll_History );
             var list =  history.Reverse( );
             foreach ( var item in list ) {
-                DrawElement( item, true );
+                var rect = EditorGUILayout.GetControlRect( );
+                DrawElement( rect, item, true, folderWidth: 300 );
             }
             EditorGUILayout.EndScrollView( );
             //if ( GUILayout.Button( "Save" ) ) {
