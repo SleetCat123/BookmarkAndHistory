@@ -86,14 +86,16 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 b = GUI.Button( assetRect, new GUIContent( fileName, icon, path ), style );
                 b |= GUI.Button( fullPathrect, path, styleSub );
             }
+            var folder = obj as DefaultAsset;
             if ( b && obj != null ) {
-                if ( Selection.activeObject == obj ) {
+                if ( folder != null ) {
+                    Selection.activeObject = obj;
+                    AssetDatabase.OpenAsset( obj );
+                } else if ( Selection.activeObject == obj ) {
                     AssetDatabase.OpenAsset( obj );
                 } else {
                     Selection.activeObject = obj;
-                    if ( !( obj is DefaultAsset ) ) {
-                        EditorGUIUtility.PingObject( obj );
-                    }
+                    EditorGUIUtility.PingObject( obj );
                 }
                 if ( keepHistoryOrder ) {
                     prevSelectedPath = path;
