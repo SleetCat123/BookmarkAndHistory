@@ -48,50 +48,53 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             history.AddHisotry( selectObj );
             Repaint( );
         }
-        void DrawElement( string item ) {
+        void DrawElement( string path ) {
+            var obj = AssetDatabase.LoadAssetAtPath<Object>( path );
+
             var style = new GUIStyle( EditorStyles.label );
             style.fontSize = 13;
 
             var styleSub = new GUIStyle( EditorStyles.label );
             styleSub.fontSize = 11;
 
-            var fileName = Path.GetFileName( item );
+            var fileName = Path.GetFileName( path );
 
             bool b;
             using ( new EditorGUILayout.HorizontalScope( ) ) {
-                Rect rect;
-                rect = EditorGUILayout.GetControlRect( GUILayout.Width( 25 ) );
+                var starButtonRect = EditorGUILayout.GetControlRect( GUILayout.Width( 25 ) );
+                var assetRect = EditorGUILayout.GetControlRect( GUILayout.MinWidth( 200 ) );
+                var fullPathrect = EditorGUILayout.GetControlRect( GUILayout.MinWidth( 700 ) );
+                var rect = new Rect(starButtonRect.position, new Vector2(fullPathrect.xMax, fullPathrect.height));
 
-                var temp_color = GUI.contentColor;
-                if ( !bookmark.Contains( item ) ) {
+                var temp_contentColor = GUI.contentColor;
+                if ( Selection.activeObject == obj ) {
+                    EditorGUI.DrawRect( rect, new Color( 1f, 1f, 1f, 0.1f ) );
+                }
+                if ( !bookmark.Contains( path ) ) {
                     GUI.contentColor = Color.white * 0.65f;
                 }
-                if ( GUI.Button( rect, Content_Star ) ) {
-                    if ( bookmark.Contains( item ) ) {
-                        bookmark.RemoveBookmark( item );
-                        history.AddHisotry( item );
+                if ( GUI.Button( starButtonRect, Content_Star ) ) {
+                    if ( bookmark.Contains( path ) ) {
+                        bookmark.RemoveBookmark( path );
+                        history.AddHisotry( path );
                     } else {
-                        bookmark.AddBookmark( item );
+                        bookmark.AddBookmark( path );
                     }
                 }
-                GUI.contentColor = temp_color;
-                rect = EditorGUILayout.GetControlRect( GUILayout.MinWidth( 200 ) );
-                var icon = AssetDatabase.GetCachedIcon( item );
-                b = GUI.Button( rect, new GUIContent( fileName, icon, item ), style );
-                rect = EditorGUILayout.GetControlRect( GUILayout.MinWidth( 700 ) );
-                b |= GUI.Button( rect, item, styleSub );
+                GUI.contentColor = temp_contentColor;
+                var icon = AssetDatabase.GetCachedIcon( path );
+                b = GUI.Button( assetRect, new GUIContent( fileName, icon, path ), style );
+                b |= GUI.Button( fullPathrect, path, styleSub );
             }
-
-            if ( b ) {
-                var obj = AssetDatabase.LoadAssetAtPath<Object>( item );
-                if ( obj != null ) {
-                    if ( Selection.activeObject == obj ) {
-                        AssetDatabase.OpenAsset( obj );
-                    } else {
-                        Selection.activeObject = obj;
+            if ( b && obj != null ) {
+                if ( Selection.activeObject == obj ) {
+                    AssetDatabase.OpenAsset( obj );
+                } else {
+                    Selection.activeObject = obj;
+                    if ( !( obj is DefaultAsset ) ) {
                         EditorGUIUtility.PingObject( obj );
-                        //prevSelectedPath = item;
                     }
+                    //prevSelectedPath = item;
                 }
             }
         }
