@@ -48,7 +48,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             history.AddHisotry( selectObj );
             Repaint( );
         }
-        void DrawElement( string path ) {
+        void DrawElement( string path, bool keepHistoryOrder ) {
             var obj = AssetDatabase.LoadAssetAtPath<Object>( path );
 
             var style = new GUIStyle( EditorStyles.label );
@@ -94,7 +94,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                     if ( !( obj is DefaultAsset ) ) {
                         EditorGUIUtility.PingObject( obj );
                     }
-                    //prevSelectedPath = item;
+                }
+                if ( keepHistoryOrder ) {
+                    prevSelectedPath = path;
                 }
             }
         }
@@ -103,7 +105,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             scroll_Bookmark = EditorGUILayout.BeginScrollView( scroll_Bookmark, GUILayout.MinHeight( 300 ) );
             var bookmarks =  bookmark.Reverse( );
             foreach ( var item in bookmarks ) {
-                DrawElement( item );
+                DrawElement( item, false );
 
             }
             EditorGUILayout.EndScrollView( );
@@ -114,7 +116,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             scroll_History = EditorGUILayout.BeginScrollView( scroll_History );
             var list =  history.Reverse( );
             foreach ( var item in list ) {
-                DrawElement( item );
+                DrawElement( item, true );
             }
             EditorGUILayout.EndScrollView( );
             //if ( GUILayout.Button( "Save" ) ) {
