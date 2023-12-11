@@ -16,6 +16,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         SelectionHistoryData history = new SelectionHistoryData();
         [SerializeField]
         BookmarkData bookmark = new BookmarkData();
+        //[SerializeField]
+        //BookmarkAndHistoryWindowSettings settings = new BookmarkAndHistoryWindowSettings( );
+
         string prevSelectedPath;
 
         Vector2 scroll_Bookmark;
@@ -27,12 +30,14 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         private void OnDisable( ) {
             bookmark.Save( );
             history.Save( );
+            //settings.Save( );
         }
 
         private void OnEnable( ) {
             Content_Star = EditorGUIUtility.IconContent( "Favorite" );
             bookmark.Load( );
             history.Load( );
+            //settings.Load( );
         }
 
         private void Update( ) {
