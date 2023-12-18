@@ -50,8 +50,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         }
 
         public bool Contains( string path ) {
-            var obj = AssetDatabase.LoadAssetAtPath<Object>( path );
-            return Contains( obj );
+            return bookmarkObjects.Any( v => v.Path == path );
         }
         public bool Contains( Object obj ) {
             return bookmarkObjects.Contains( obj );

@@ -85,13 +85,14 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 if ( Selection.activeObject == obj ) {
                     EditorGUI.DrawRect( rowRect, new Color( 1f, 1f, 1f, 0.1f ) );
                 }
-                if ( !bookmark.Contains( path ) ) {
+                bool contains = bookmark.Contains( path );
+                if ( !contains ) {
                     GUI.contentColor = Color.white * 0.65f;
                 }
                 var rect = rowRect;
                 rect.width = 25;
                 if ( GUI.Button( rect, Content_Star ) ) {
-                    if ( bookmark.Contains( path ) ) {
+                    if ( contains ) {
                         bookmark.RemoveBookmark( path );
                         history.AddHisotry( path );
                     } else {
