@@ -1,13 +1,36 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
     [System.Serializable]
-    public class BookmarkData : IEnumerable<string> {
+    public class BookmarkData : IEnumerable<ObjectWithPath>, ISerializationCallbackReceiver {
         const string PATH_BOOKMARK = "BookmarkAndHistory/MizoresBookmark.json";
-        public List<string> bookmark = new  List<string>();
+
+        [System.NonSerialized] List<ObjectWithPath> bookmarkObjects = new List<ObjectWithPath>( );
+        /// <summary>
+        /// Serialize用
+        /// </summary>
+        [SerializeField] string[] bookmark = new string[0];
+
+        public List<ObjectWithPath> Bookmark {
+            get {
+                return bookmarkObjects;
+            }
+        }
+        public ObjectWithPath this[int index] {
+            get {
+                return bookmarkObjects[index];
+            }
+        }
+        public int Count {
+            get {
+                return bookmarkObjects.Count;
+            }
+        }
 
         public void Save( ) {
             var json = JsonUtility.ToJson( this, true );
@@ -27,29 +50,58 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         }
 
         public bool Contains( string path ) {
-            return bookmark.Contains( path );
+            var obj = AssetDatabase.LoadAssetAtPath<Object>( path );
+            return Contains( obj );
+        }
+        public bool Contains( Object obj ) {
+            return bookmarkObjects.Contains( obj );
         }
         public void AddBookmark( string path ) {
-            bookmark.RemoveAll( v => v == path );
-            bookmark.Add( path );
+            bookmarkObjects.RemoveAll( v => v.Path == path );
+            bookmarkObjects.Add( new ObjectWithPath( path ) );
+        }
+        public void AddBookmark( Object obj ) {
+            bookmarkObjects.RemoveAll( v => v.Object == obj );
+            bookmarkObjects.Add( obj );
         }
         public void RemoveBookmark( string path ) {
-            bookmark.RemoveAll( v => v == path );
+            bookmarkObjects.RemoveAll( v => v.Path == path );
+        }
+        public void RemoveBookmark( Object obj ) {
+            bookmarkObjects.RemoveAll( v => v.Object == obj );
         }
         public void ToggleBookmark( string path ) {
-            if ( bookmark.Contains( path ) ) {
+            if ( Contains( path ) ) {
                 RemoveBookmark( path );
             } else {
                 AddBookmark( path );
             }
         }
+        public void ToggleBookmark( Object obj ) {
+            if ( Contains( obj ) ) {
+                RemoveBookmark( obj );
+            } else {
+                AddBookmark( obj );
+            }
+        }
 
-        public IEnumerator<string> GetEnumerator( ) {
-            return bookmark.GetEnumerator( );
+        public IEnumerator<ObjectWithPath> GetEnumerator( ) {
+            return bookmarkObjects.GetEnumerator( );
         }
 
         IEnumerator IEnumerable.GetEnumerator( ) {
-            return bookmark.GetEnumerator( );
+            return bookmarkObjects.GetEnumerator( );
+        }
+
+        public void OnBeforeSerialize( ) {
+            bookmark = bookmarkObjects.Select( x => x.Path ).ToArray( );
+        }
+
+        public void OnAfterDeserialize( ) {
+            bookmarkObjects.Clear( );
+            foreach ( var path in bookmark ) {
+                bookmarkObjects.Add( new ObjectWithPath( path ) );
+            }
         }
     }
 }

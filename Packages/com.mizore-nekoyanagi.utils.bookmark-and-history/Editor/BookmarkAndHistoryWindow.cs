@@ -22,7 +22,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
 
         ReorderableList reorderableList;
 
-        string prevSelectedPath;
+        string prevSelectedGUID;
 
         Vector2 scroll_Bookmark;
         Vector2 scroll_History;
@@ -42,10 +42,13 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             history.Load( );
             //settings.Load( );
 
-            reorderableList = new ReorderableList( bookmark.bookmark, typeof( string ), true, false, false, false );
+            reorderableList = new ReorderableList( bookmark.Bookmark, typeof( string ), true, false, false, false );
             reorderableList.drawElementCallback = ( rect, index, isActive, isFocused ) => {
-                var path = bookmark.bookmark[index];
-                DrawElement( rect, path, false, folderWidth: 280 );
+                if ( bookmark.Count <= index ) {
+                    return;
+                }
+                var obj = bookmark[index];
+                DrawElement( rect, obj, false, folderWidth: 280 );
             };
             reorderableList.headerHeight = 0;
             reorderableList.footerHeight = 0;
@@ -57,16 +60,16 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 return;
             }
             var GUID = Selection.assetGUIDs[0];
-            var selectObj = AssetDatabase.GUIDToAssetPath(GUID);
-            if ( prevSelectedPath == selectObj ) {
-                return;
+            if ( prevSelectedGUID != GUID ) {
+                prevSelectedGUID = GUID;
+                var selectObjPath = AssetDatabase.GUIDToAssetPath(GUID);
+                history.AddHisotry( selectObjPath );
+                Repaint( );
             }
-            prevSelectedPath = selectObj;
-            history.AddHisotry( selectObj );
-            Repaint( );
         }
-        void DrawElement( Rect rowRect, string path, bool keepHistoryOrder, float folderWidth ) {
-            var obj = AssetDatabase.LoadAssetAtPath<Object>( path );
+        void DrawElement( Rect rowRect, ObjectWithPath objWithPath, bool keepHistoryOrder, float folderWidth ) {
+            var obj = objWithPath.Object;
+            var path = objWithPath.Path;
 
             var style = new GUIStyle( EditorStyles.label );
             style.fontSize = 13;
@@ -96,31 +99,41 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                     }
                 }
                 GUI.contentColor = temp_contentColor;
-                var icon = AssetDatabase.GetCachedIcon( path );
                 rect.x += rect.width;
                 rect.width = folderWidth;
+                Texture icon = null;
+                if ( obj != null ) {
+                    icon = AssetDatabase.GetCachedIcon( path );
+                }
                 b = GUI.Button( rect, new GUIContent( fileName, icon, path ), style );
                 rect.x += rect.width;
                 rect.width = rowRect.xMax - rect.x;
                 b |= GUI.Button( rect, new GUIContent( path, path ), styleSub );
             }
             var folder = obj as DefaultAsset;
-            if ( b && obj != null ) {
-                if ( folder != null ) {
-                    Selection.activeObject = obj;
-                    AssetDatabase.OpenAsset( obj );
-                } else if ( Selection.activeObject == obj ) {
-                    AssetDatabase.OpenAsset( obj );
+            if ( b ) {
+                if ( obj == null ) {
+                    history.RemoveHistory( path );
                 } else {
-                    Selection.activeObject = obj;
-                    EditorGUIUtility.PingObject( obj );
-                }
-                if ( keepHistoryOrder ) {
-                    prevSelectedPath = path;
+                    if ( folder != null ) {
+                        Selection.activeObject = obj;
+                        AssetDatabase.OpenAsset( obj );
+                    } else if ( Selection.activeObject == obj ) {
+                        AssetDatabase.OpenAsset( obj );
+                    } else {
+                        Selection.activeObject = obj;
+                        EditorGUIUtility.PingObject( obj );
+                    }
+                    if ( keepHistoryOrder ) {
+                        var GUID = AssetDatabase.AssetPathToGUID( path );
+                        prevSelectedGUID = GUID;
+                    }
                 }
             }
         }
         private void OnGUI( ) {
+            // EditorGUILayout.LabelField( "Prev Selected", prevSelectedPath );
+
             EditorGUILayout.LabelField( "Bookmark", EditorStyles.boldLabel );
             scroll_Bookmark = EditorGUILayout.BeginScrollView( scroll_Bookmark, GUILayout.MinHeight( 300 ) );
             reorderableList.DoLayoutList( );
@@ -130,10 +143,11 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
 
             EditorGUILayout.LabelField( "History", EditorStyles.boldLabel );
             scroll_History = EditorGUILayout.BeginScrollView( scroll_History );
-            var list =  history.Reverse( );
-            foreach ( var item in list ) {
+            // 逆順
+            for ( int i = history.Count - 1; 0 <= i; i-- ) {
+                var obj = history[i];
                 var rect = EditorGUILayout.GetControlRect( );
-                DrawElement( rect, item, true, folderWidth: 300 );
+                DrawElement( rect, obj, true, folderWidth: 300 );
             }
             EditorGUILayout.EndScrollView( );
             //if ( GUILayout.Button( "Save" ) ) {
