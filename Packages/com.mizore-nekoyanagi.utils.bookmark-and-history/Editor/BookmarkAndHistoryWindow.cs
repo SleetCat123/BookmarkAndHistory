@@ -42,13 +42,47 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             history.Load( );
             //settings.Load( );
 
-            reorderableList = new ReorderableList( bookmark.Bookmark, typeof( string ), true, false, false, false );
-            reorderableList.drawElementCallback = ( rect, index, isActive, isFocused ) => {
+            reorderableList = new ReorderableList(
+                elements: bookmark.Bookmark,
+                elementType: typeof( string ),
+                draggable: true,
+                displayHeader: false,
+                displayAddButton: true,
+                displayRemoveButton: true
+                );
+            reorderableList.drawElementCallback = ( rowRect, index, isActive, isFocused ) => {
                 if ( bookmark.Count <= index ) {
                     return;
                 }
                 var obj = bookmark[index];
-                DrawElement( rect, obj, false, folderWidth: 280 );
+                if ( obj.IsSeparator ) {
+                    var rect = rowRect;
+                    using ( new EditorGUILayout.HorizontalScope( ) ) {
+                        rect.width = 25;
+                        if ( GUI.Button( rect, "-" ) ) {
+                            bookmark.RemoveAt( index );
+                        }
+                        rect.x += rect.width;
+                        rect.width = rowRect.width - rect.width;
+                        EditorGUI.LabelField( rect, string.Empty, GUI.skin.button );
+                    }
+                } else {
+                    DrawElement( rowRect, obj, false, folderWidth: 280 );
+                }
+            };
+            reorderableList.elementHeightCallback = ( index ) => {
+                var obj = bookmark[index];
+                if ( obj.IsSeparator ) {
+                    return 15;
+                } else {
+                    return EditorGUIUtility.singleLineHeight;
+                }
+            };
+            reorderableList.onAddCallback = ( list ) => {
+                bookmark.AddSeparator( list.index );
+            };
+            reorderableList.onRemoveCallback = ( list ) => {
+                bookmark.RemoveAt( list.index );
             };
             reorderableList.headerHeight = 0;
             reorderableList.footerHeight = 0;

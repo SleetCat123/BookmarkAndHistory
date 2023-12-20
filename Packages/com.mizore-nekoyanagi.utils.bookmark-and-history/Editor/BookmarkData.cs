@@ -55,6 +55,15 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         public bool Contains( Object obj ) {
             return bookmarkObjects.Contains( obj );
         }
+        public void AddSeparator( int index ) {
+            bookmarkObjects.Insert( index, new ObjectWithPath( ) );
+        }
+        public void AddSeparator( ) {
+            bookmarkObjects.Add( new ObjectWithPath( ) );
+        }
+        public void RemoveAt( int index ) {
+            bookmarkObjects.RemoveAt( index );
+        }
         public void AddBookmark( string path ) {
             bookmarkObjects.RemoveAll( v => v.Path == path );
             bookmarkObjects.Add( new ObjectWithPath( path ) );
