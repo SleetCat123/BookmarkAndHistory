@@ -14,6 +14,11 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         /// Serialize用
         /// </summary>
         [SerializeField] string[] history = new string[0];
+        public List<ObjectWithPath> History {
+            get {
+                return historyObjects;
+            }
+        }
 
         public ObjectWithPath this[int index] {
             get {

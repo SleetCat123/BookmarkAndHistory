@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using NUnit.Framework;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditorInternal;
@@ -20,7 +22,8 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         //[SerializeField]
         //BookmarkAndHistoryWindowSettings settings = new BookmarkAndHistoryWindowSettings( );
 
-        ReorderableList reorderableList;
+        ReorderableList reorderableList_Bookmark;
+        ReorderableList reorderableList_History;
 
         string prevSelectedGUID;
 
@@ -36,57 +39,100 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             //settings.Save( );
         }
 
+        void drawElementCallback( ReorderableList reorderableList, bool invert, bool keepHistoryOrder, Rect rowRect, int index, bool isActive, bool isFocused ) {
+            var list = reorderableList.list as List<ObjectWithPath>;
+            if ( list.Count <= index ) {
+                return;
+            }
+            ObjectWithPath obj;
+            if ( invert ) {
+                obj = list[list.Count - index - 1];
+            } else {
+                obj = list[index];
+            }
+            if ( obj.IsSeparator ) {
+                var rect = rowRect;
+                using ( new EditorGUILayout.HorizontalScope( ) ) {
+                    rect.width = 25;
+                    if ( GUI.Button( rect, "-" ) ) {
+                        list.RemoveAt( index );
+                    }
+                    rect.x += rect.width;
+                    rect.width = rowRect.width - rect.width;
+                    EditorGUI.LabelField( rect, string.Empty, GUI.skin.button );
+                }
+            } else {
+                var result = DrawElement( rowRect, obj, keepHistoryOrder, folderWidth: 280 );
+                if ( result.dragAndDropTarget ) {
+                    reorderableList.Select( index );
+                }
+            }
+        }
+        public float elementHeightCallback( ReorderableList reorderableList, int index ) {
+            var list = reorderableList.list as List<ObjectWithPath>;
+            var obj = list[index];
+            if ( obj.IsSeparator ) {
+                return 15;
+            } else {
+                return EditorGUIUtility.singleLineHeight;
+            }
+        }
+
         private void OnEnable( ) {
             Content_Star = EditorGUIUtility.IconContent( "Favorite" );
             bookmark.Load( );
             history.Load( );
             //settings.Load( );
 
-            reorderableList = new ReorderableList(
+            reorderableList_Bookmark = new ReorderableList(
                 elements: bookmark.Bookmark,
-                elementType: typeof( string ),
+                elementType: typeof( ObjectWithPath ),
                 draggable: true,
                 displayHeader: false,
                 displayAddButton: true,
                 displayRemoveButton: true
                 );
-            reorderableList.drawElementCallback = ( rowRect, index, isActive, isFocused ) => {
-                if ( bookmark.Count <= index ) {
-                    return;
-                }
-                var obj = bookmark[index];
-                if ( obj.IsSeparator ) {
-                    var rect = rowRect;
-                    using ( new EditorGUILayout.HorizontalScope( ) ) {
-                        rect.width = 25;
-                        if ( GUI.Button( rect, "-" ) ) {
-                            bookmark.RemoveAt( index );
-                        }
-                        rect.x += rect.width;
-                        rect.width = rowRect.width - rect.width;
-                        EditorGUI.LabelField( rect, string.Empty, GUI.skin.button );
-                    }
-                } else {
-                    DrawElement( rowRect, obj, false, folderWidth: 280 );
-                }
-            };
-            reorderableList.elementHeightCallback = ( index ) => {
-                var obj = bookmark[index];
-                if ( obj.IsSeparator ) {
-                    return 15;
-                } else {
-                    return EditorGUIUtility.singleLineHeight;
-                }
-            };
-            reorderableList.onAddCallback = ( list ) => {
+            reorderableList_Bookmark.drawElementCallback = ( rowRect, index, isActive, isFocused ) => drawElementCallback(
+                reorderableList: reorderableList_Bookmark,
+                invert: false,
+                keepHistoryOrder: false,
+                rowRect: rowRect,
+                index: index,
+                isActive: isActive,
+                isFocused: isFocused
+                );
+            reorderableList_Bookmark.elementHeightCallback = ( index ) => elementHeightCallback( reorderableList_Bookmark, index );
+            reorderableList_Bookmark.onAddCallback = ( list ) => {
                 bookmark.AddSeparator( list.index );
             };
-            reorderableList.onRemoveCallback = ( list ) => {
+            reorderableList_Bookmark.onRemoveCallback = ( list ) => {
                 bookmark.RemoveAt( list.index );
             };
-            reorderableList.headerHeight = 0;
-            reorderableList.footerHeight = 0;
-            reorderableList.showDefaultBackground = false;
+            reorderableList_Bookmark.headerHeight = 0;
+            reorderableList_Bookmark.footerHeight = 0;
+            reorderableList_Bookmark.showDefaultBackground = false;
+
+            reorderableList_History = new ReorderableList(
+                elements: history.History,
+                elementType: typeof( ObjectWithPath ),
+                draggable: false,
+                displayHeader: false,
+                displayAddButton: false,
+                displayRemoveButton: false
+                );
+            reorderableList_History.drawElementCallback = ( rowRect, index, isActive, isFocused ) => drawElementCallback(
+                reorderableList: reorderableList_History,
+                invert: true,
+                keepHistoryOrder: true,
+                rowRect: rowRect,
+                index: index,
+                isActive: isActive,
+                isFocused: isFocused
+                );
+            reorderableList_History.elementHeightCallback = ( index ) => elementHeightCallback( reorderableList_History, index );
+            reorderableList_History.headerHeight = 0;
+            reorderableList_History.footerHeight = 0;
+            reorderableList_History.showDefaultBackground = false;
         }
 
         private void Update( ) {
@@ -101,7 +147,11 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 Repaint( );
             }
         }
-        void DrawElement( Rect rowRect, ObjectWithPath objWithPath, bool keepHistoryOrder, float folderWidth ) {
+        class DrawElementResult {
+            public bool clicked;
+            public bool dragAndDropTarget;
+        }
+        DrawElementResult DrawElement( Rect rowRect, ObjectWithPath objWithPath, bool keepHistoryOrder, float folderWidth ) {
             var obj = objWithPath.Object;
             var path = objWithPath.Path;
 
@@ -113,10 +163,10 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
 
             var fileName = Path.GetFileName( path );
 
-            bool b;
+            DrawElementResult result = new DrawElementResult( );
             using ( new EditorGUILayout.HorizontalScope( ) ) {
                 var temp_contentColor = GUI.contentColor;
-                if ( Selection.activeObject == obj ) {
+                if ( Selection.objects.Contains( obj ) ) {
                     EditorGUI.DrawRect( rowRect, new Color( 1f, 1f, 1f, 0.1f ) );
                 }
                 bool contains = bookmark.Contains( path );
@@ -140,14 +190,15 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 if ( obj != null ) {
                     icon = AssetDatabase.GetCachedIcon( path );
                 }
-                b = GUI.Button( rect, new GUIContent( fileName, icon, path ), style );
+                result.clicked = GUI.Button( rect, new GUIContent( fileName, icon, path ), style );
                 rect.x += rect.width;
                 rect.width = rowRect.xMax - rect.x;
-                b |= GUI.Button( rect, new GUIContent( path, path ), styleSub );
+                result.clicked |= GUI.Button( rect, new GUIContent( path, path ), styleSub );
             }
             var folder = obj as DefaultAsset;
-            if ( b ) {
+            if ( result.clicked ) {
                 if ( obj == null ) {
+                    // オブジェクトが存在しない場合は履歴から削除
                     history.RemoveHistory( path );
                 } else {
                     if ( folder != null ) {
@@ -165,26 +216,58 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                     }
                 }
             }
+            // ObjectがDefaultAsset（フォルダ）の場合、選択中のAssetをドラッグ＆ドロップで格納できるようにする
+            if ( folder != null && rowRect.Contains( Event.current.mousePosition ) ) {
+                var evt = Event.current;
+                if ( evt.type == EventType.DragUpdated ) {
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Move;
+
+                    result.dragAndDropTarget = true;
+
+                    evt.Use( );
+                } else if ( evt.type == EventType.DragPerform ) {
+                    DragAndDrop.AcceptDrag( );
+                    var folderPath = path;
+                    var dropObjects = DragAndDrop.objectReferences;
+                    foreach ( var dropObject in dropObjects ) {
+                        if ( dropObject == obj ) {
+                            continue;
+                        }
+                        if ( !EditorUtility.IsPersistent( dropObject ) ) {
+                            continue;
+                        }
+                        var fromPath = AssetDatabase.GetAssetPath( dropObject );
+                        var assetName = Path.GetFileName( fromPath );
+                        var newPath = Path.Combine( folderPath, assetName );
+                        if ( fromPath == newPath ) {
+                            continue;
+                        }
+                        AssetDatabase.MoveAsset( fromPath, newPath );
+                        Debug.Log($"MoveAsset: \nFrom: {fromPath}\nTo: {newPath}");
+                        EditorGUIUtility.PingObject( dropObject );
+                        result.clicked = true;
+                    }
+                    result.dragAndDropTarget = true;
+                    evt.Use( );
+                }
+            }
+            return result;
         }
         private void OnGUI( ) {
             // EditorGUILayout.LabelField( "Prev Selected", prevSelectedPath );
 
             EditorGUILayout.LabelField( "Bookmark", EditorStyles.boldLabel );
             scroll_Bookmark = EditorGUILayout.BeginScrollView( scroll_Bookmark, GUILayout.MinHeight( 300 ) );
-            reorderableList.DoLayoutList( );
+            reorderableList_Bookmark.DoLayoutList( );
             EditorGUILayout.EndScrollView( );
 
             EditorGUILayout.Separator( );
 
             EditorGUILayout.LabelField( "History", EditorStyles.boldLabel );
             scroll_History = EditorGUILayout.BeginScrollView( scroll_History );
-            // 逆順
-            for ( int i = history.Count - 1; 0 <= i; i-- ) {
-                var obj = history[i];
-                var rect = EditorGUILayout.GetControlRect( );
-                DrawElement( rect, obj, true, folderWidth: 300 );
-            }
+            reorderableList_History.DoLayoutList( );
             EditorGUILayout.EndScrollView( );
+
             //if ( GUILayout.Button( "Save" ) ) {
             //    history.Save( );
             //    bookmark.Save( );
