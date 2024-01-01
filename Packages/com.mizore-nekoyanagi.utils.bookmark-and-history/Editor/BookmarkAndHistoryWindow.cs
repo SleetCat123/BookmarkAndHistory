@@ -195,12 +195,12 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 rect.width = rowRect.xMax - rect.x;
                 result.clicked |= GUI.Button( rect, new GUIContent( path, path ), styleSub );
             }
-            var folder = obj as DefaultAsset;
             if ( result.clicked ) {
                 if ( obj == null ) {
                     // オブジェクトが存在しない場合は履歴から削除
                     history.RemoveHistory( path );
                 } else {
+                    var folder = obj as DefaultAsset;
                     if ( folder != null ) {
                         Selection.activeObject = obj;
                         AssetDatabase.OpenAsset( obj );
@@ -216,9 +216,32 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                     }
                 }
             }
-            // ObjectがDefaultAsset（フォルダ）の場合、選択中のAssetをドラッグ＆ドロップで格納できるようにする
-            if ( folder != null && rowRect.Contains( Event.current.mousePosition ) ) {
-                var evt = Event.current;
+            DragDrop( rowRect, path, obj, result );
+            return result;
+        }
+        void DragDrop( Rect rowRect, string path, Object obj, DrawElementResult result ) {
+            if ( obj == null ) {
+                return;
+            }
+            if ( !rowRect.Contains( Event.current.mousePosition ) ) {
+                return;
+            }
+            var evt = Event.current;
+            //// prefabかfbxの場合、DragAndDropに追加
+            //if ( evt.type == EventType.DragUpdated ) {
+            //    var extension = Path.GetExtension( path );
+            //    if ( extension == ".prefab" || extension == ".fbx" ) {
+            //        DragAndDrop.PrepareStartDrag( );
+            //        DragAndDrop.paths = new string[] { path };
+            //        DragAndDrop.objectReferences = new Object[] { obj };
+            //        DragAndDrop.StartDrag( "DragAndDrop" );
+            //        evt.Use( );
+            //        return;
+            //    }
+            //}
+            var folder = obj as DefaultAsset;
+            if ( folder != null ) {
+                // ObjectがDefaultAsset（フォルダ）の場合、選択中のAssetをドラッグ＆ドロップで格納できるようにする
                 if ( evt.type == EventType.DragUpdated ) {
                     // Ctrlキーが押されていたらコピー
                     if ( evt.control ) {
@@ -229,6 +252,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                     result.dragAndDropTarget = true;
 
                     evt.Use( );
+                    return;
                 } else if ( evt.type == EventType.DragPerform ) {
                     DragAndDrop.AcceptDrag( );
                     Selection.activeObject = obj;
@@ -286,9 +310,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                     }
                     result.dragAndDropTarget = true;
                     evt.Use( );
+                    return;
                 }
             }
-            return result;
         }
         private void OnGUI( ) {
             // EditorGUILayout.LabelField( "Prev Selected", prevSelectedPath );
