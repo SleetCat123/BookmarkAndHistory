@@ -220,8 +220,12 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             if ( folder != null && rowRect.Contains( Event.current.mousePosition ) ) {
                 var evt = Event.current;
                 if ( evt.type == EventType.DragUpdated ) {
-                    DragAndDrop.visualMode = DragAndDropVisualMode.Move;
-
+                    // Ctrlキーが押されていたらコピー
+                    if ( evt.control ) {
+                        DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                    } else {
+                        DragAndDrop.visualMode = DragAndDropVisualMode.Move;
+                    }
                     result.dragAndDropTarget = true;
 
                     evt.Use( );
@@ -229,6 +233,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                     DragAndDrop.AcceptDrag( );
                     var folderPath = path;
                     var dropObjects = DragAndDrop.objectReferences;
+                    bool skipAll = false;
                     foreach ( var dropObject in dropObjects ) {
                         if ( dropObject == obj ) {
                             continue;
@@ -239,13 +244,44 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                         var fromPath = AssetDatabase.GetAssetPath( dropObject );
                         var assetName = Path.GetFileName( fromPath );
                         var newPath = Path.Combine( folderPath, assetName );
-                        if ( fromPath == newPath ) {
-                            continue;
+                        if ( evt.control ) {
+                            // Ctrlキーが押されていたらコピー
+                            newPath = AssetDatabase.GenerateUniqueAssetPath( newPath );
+                            AssetDatabase.CopyAsset( fromPath, newPath );
+                            Debug.Log( $"CopyAsset: \nFrom: {fromPath}\nTo: {newPath}" );
+                            var newObject = AssetDatabase.LoadAssetAtPath<Object>( newPath );
+                            EditorGUIUtility.PingObject( newObject );
+
+                        } else {
+                            // 移動
+                            if ( fromPath == newPath ) {
+                                continue;
+                            }
+                            if ( File.Exists( newPath ) ) {
+                                if ( skipAll){
+                                    continue;
+                                }
+                                // 確認メッセージ
+                                var text = $"{newPath}\nには同名のファイルが存在しています。\n両方のファイルを保持するか、スキップするか選択してください。\n\n";
+                                var choice = EditorUtility.DisplayDialogComplex( "Move Asset", text + newPath, "Keep Both", "Skip", "Skip All" );
+                                switch ( choice ) {
+                                    case 0:
+                                        // 両方保持
+                                        newPath = AssetDatabase.GenerateUniqueAssetPath( newPath );
+                                        break;
+                                    case 1:
+                                        // スキップ
+                                        continue;
+                                    case 2:
+                                        // 全てスキップ
+                                        skipAll = true;
+                                        continue;
+                                }
+                            }
+                            AssetDatabase.MoveAsset( fromPath, newPath );
+                            Debug.Log( $"MoveAsset: \nFrom: {fromPath}\nTo: {newPath}" );
+                            EditorGUIUtility.PingObject( dropObject );
                         }
-                        AssetDatabase.MoveAsset( fromPath, newPath );
-                        Debug.Log($"MoveAsset: \nFrom: {fromPath}\nTo: {newPath}");
-                        EditorGUIUtility.PingObject( dropObject );
-                        result.clicked = true;
                     }
                     result.dragAndDropTarget = true;
                     evt.Use( );
