@@ -231,6 +231,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                     evt.Use( );
                 } else if ( evt.type == EventType.DragPerform ) {
                     DragAndDrop.AcceptDrag( );
+                    Selection.activeObject = obj;
                     var folderPath = path;
                     var dropObjects = DragAndDrop.objectReferences;
                     bool skipAll = false;
@@ -258,7 +259,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                                 continue;
                             }
                             if ( File.Exists( newPath ) ) {
-                                if ( skipAll){
+                                if ( skipAll ) {
                                     continue;
                                 }
                                 // 確認メッセージ
