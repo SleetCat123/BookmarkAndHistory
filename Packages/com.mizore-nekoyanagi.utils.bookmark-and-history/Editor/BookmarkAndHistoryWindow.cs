@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
     public class BookmarkAndHistoryWindow : EditorWindow {
@@ -133,8 +135,17 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             reorderableList_History.headerHeight = 0;
             reorderableList_History.footerHeight = 0;
             reorderableList_History.showDefaultBackground = false;
+
+            EditorSceneManager.sceneClosed += OnSceneClosed;
+        }
+        private void OnDestroy( ) {
+            EditorSceneManager.sceneClosed -= OnSceneClosed;
         }
 
+        void OnSceneClosed( Scene scene ) {
+            // 直前に開いていたシーンを履歴に追加
+            history.AddHisotry( scene.path );
+        }
         private void Update( ) {
             if ( Selection.assetGUIDs.Length == 0 ) {
                 return;
@@ -201,11 +212,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                     history.RemoveHistory( path );
                 } else {
                     var folder = obj as DefaultAsset;
-                    if ( folder != null ) {
-                        Selection.activeObject = obj;
+                    if ( Selection.activeObject == obj ) {
                         AssetDatabase.OpenAsset( obj );
-                    } else if ( Selection.activeObject == obj ) {
-                        AssetDatabase.OpenAsset( obj );
+                        history.AddHisotry( path );
                     } else {
                         Selection.activeObject = obj;
                         EditorGUIUtility.PingObject( obj );
