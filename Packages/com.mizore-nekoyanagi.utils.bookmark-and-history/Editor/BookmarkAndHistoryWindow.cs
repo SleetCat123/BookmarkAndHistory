@@ -34,6 +34,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
 
         static GUIContent Content_Star;
 
+        Object openWhenNextUpdate;
+        int openWhenNextUpdateFrame;
+
 
         private void OnDisable( ) {
             bookmark.Save( );
@@ -147,6 +150,14 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             history.AddHisotry( scene.path );
         }
         private void Update( ) {
+            if ( openWhenNextUpdate != null ) {
+                openWhenNextUpdateFrame--;
+                if ( openWhenNextUpdateFrame <= 0 ) {
+                    AssetDatabase.OpenAsset( openWhenNextUpdate );
+                    history.AddHisotry( AssetDatabase.GetAssetPath( openWhenNextUpdate ) );
+                    openWhenNextUpdate = null;
+                }
+            }
             if ( Selection.assetGUIDs.Length == 0 ) {
                 return;
             }
@@ -157,6 +168,11 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 history.AddHisotry( selectObjPath );
                 Repaint( );
             }
+        }
+        void SetOpenWhenNextUpdate( Object obj ) {
+            // すぐにOpenAssetしてもフォルダが開かないので何フレームか待つ
+            openWhenNextUpdate = obj;
+            openWhenNextUpdateFrame = 2;
         }
         class DrawElementResult {
             public bool clicked;
@@ -212,16 +228,19 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                     history.RemoveHistory( path );
                 } else {
                     var folder = obj as DefaultAsset;
-                    if ( Selection.activeObject == obj ) {
+                    if ( folder != null ) {
+                        Selection.activeObject = obj;
+                        SetOpenWhenNextUpdate( obj );
+                    } else if ( Selection.activeObject == obj ) {
                         AssetDatabase.OpenAsset( obj );
                         history.AddHisotry( path );
                     } else {
                         Selection.activeObject = obj;
                         EditorGUIUtility.PingObject( obj );
-                    }
-                    if ( keepHistoryOrder ) {
-                        var GUID = AssetDatabase.AssetPathToGUID( path );
-                        prevSelectedGUID = GUID;
+                        if ( keepHistoryOrder ) {
+                            var GUID = AssetDatabase.AssetPathToGUID( path );
+                            prevSelectedGUID = GUID;
+                        }
                     }
                 }
             }
