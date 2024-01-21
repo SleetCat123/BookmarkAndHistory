@@ -37,6 +37,8 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         Object openWhenNextUpdate;
         int openWhenNextUpdateFrame;
 
+        string edittingLabelPath;
+        string edittingLabelValue;
 
         private void OnDisable( ) {
             Save( );
@@ -192,13 +194,8 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             var obj = objWithPath.Object;
             var path = objWithPath.Path;
 
-            var style = new GUIStyle( EditorStyles.label );
-            style.fontSize = 13;
-
             var styleSub = new GUIStyle( EditorStyles.label );
             styleSub.fontSize = 11;
-
-            var fileName = Path.GetFileName( path );
 
             DrawElementResult result = new DrawElementResult( );
             using ( new EditorGUILayout.HorizontalScope( ) ) {
@@ -238,10 +235,58 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 if ( obj != null ) {
                     icon = AssetDatabase.GetCachedIcon( path );
                 }
-                result.clicked = GUI.Button( rect, new GUIContent( fileName, icon, path ), style );
+                if ( edittingLabelPath != null && edittingLabelPath == path ) {
+                    EditorGUI.BeginChangeCheck( );
+                    edittingLabelValue = EditorGUI.DelayedTextField( rect, edittingLabelValue );
+                    if ( EditorGUI.EndChangeCheck( ) ) {
+                        bookmark.SetLabel( path, edittingLabelValue );
+                        edittingLabelPath = null;
+                        edittingLabelValue = null;
+                    } else if ( Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.Escape ) {
+                        // EnterキーかEscキーが押されたら終了
+                        edittingLabelPath = null;
+                        edittingLabelValue = null;
+                        Repaint( );
+                    }
+                } else {
+                    var label = bookmark.GetLabel( path );
+                    EditorGUI.LabelField( rect, new GUIContent( label, icon, path ) );
+                    if ( Event.current.type == EventType.MouseDown && rect.Contains( Event.current.mousePosition ) ) {
+                        // 左クリックで選択
+                        result.clicked = true;
+                        edittingLabelPath = null;
+                        edittingLabelValue = null;
+                        Event.current.Use( );
+                    } else if ( Event.current.type == EventType.ContextClick && rect.Contains( Event.current.mousePosition ) ) {
+                        result.clicked = false;
+                        edittingLabelPath = null;
+                        edittingLabelValue = null;
+                        // 右クリックでラベルを変更
+                        var menu = new GenericMenu( );
+                        menu.AddItem( new GUIContent( "Edit Label" ), false, ( ) => {
+                            edittingLabelPath = path;
+                            edittingLabelValue = label;
+                        } );
+                        if ( bookmark.HasLabel( path ) ) {
+                            menu.AddItem( new GUIContent( "Remove Label" ), false, ( ) => {
+                                bookmark.RemoveLabel( path );
+                            } );
+                        } else {
+                            menu.AddDisabledItem( new GUIContent( "Remove Label" ) );
+                        }
+                        menu.ShowAsContext( );
+                        Event.current.Use( );
+                    }
+                }
                 rect.x += rect.width;
                 rect.width = rowRect.xMax - rect.x;
-                result.clicked |= GUI.Button( rect, new GUIContent( path, path ), styleSub );
+                EditorGUI.LabelField( rect, new GUIContent( path, path ), styleSub );
+                if ( Event.current.type == EventType.MouseDown && rect.Contains( Event.current.mousePosition ) ) {
+                    result.clicked = true;
+                    edittingLabelPath = null;
+                    edittingLabelValue = null;
+                    Event.current.Use( );
+                }
             }
             if ( result.clicked ) {
                 if ( obj == null ) {
