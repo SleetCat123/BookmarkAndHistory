@@ -204,8 +204,19 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                 rect.width = 25;
                 if ( GUI.Button( rect, Content_Star ) ) {
                     if ( contains ) {
-                        bookmark.RemoveBookmark( path );
-                        history.AddHisotry( path );
+                        // Shiftキーが押されていたら確認メッセージを表示せずに削除
+                        bool remove = false;
+                        if ( Event.current.shift ) {
+                            remove = true;
+                        } else {
+                            // 確認メッセージ
+                            var text = $"{path}\nをブックマークから削除しますか？";
+                            remove = EditorUtility.DisplayDialog( "Remove Bookmark", text, "Remove", "Cancel" );
+                        }
+                        if ( remove ) {
+                            bookmark.RemoveBookmark( path );
+                            history.AddHisotry( path );
+                        }
                     } else {
                         bookmark.AddBookmark( path );
                     }
