@@ -10,6 +10,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
     public class BookmarkData : IEnumerable<ObjectWithPath>, ISerializationCallbackReceiver {
         const string PATH_BOOKMARK = "BookmarkAndHistory/MizoresBookmark.json";
 
+        [System.NonSerialized]
+        public BookmarkAndHistoryWindowSettings settings;
+
         [System.NonSerialized] List<ObjectWithPath> bookmarkObjects = new List<ObjectWithPath>( );
         /// <summary>
         /// Serialize用
@@ -34,7 +37,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
 
         public void Save( ) {
             var json = JsonUtility.ToJson( this, true );
-            Debug.Log( "Bookmark Saving: \n" + json );
+            if ( settings.debug ) {
+                Debug.Log( "Bookmark Saving: \n" + json );
+            }
             var dir = Path.GetDirectoryName( PATH_BOOKMARK );
             if ( !Directory.Exists( dir ) ) {
                 Directory.CreateDirectory( dir );
@@ -44,7 +49,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         public void Load( ) {
             if ( File.Exists( PATH_BOOKMARK ) ) {
                 string json = File.ReadAllText(PATH_BOOKMARK);
-                Debug.Log( "Bookmark Loading: \n" + json );
+                if ( settings.debug ) {
+                    Debug.Log( "Bookmark Loading: \n" + json );
+                }
                 JsonUtility.FromJsonOverwrite( json, this );
             }
         }

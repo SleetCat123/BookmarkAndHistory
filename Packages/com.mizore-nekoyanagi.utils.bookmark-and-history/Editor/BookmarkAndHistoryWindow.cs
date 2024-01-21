@@ -21,8 +21,8 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         SelectionHistoryData history = new SelectionHistoryData();
         [SerializeField]
         BookmarkData bookmark = new BookmarkData();
-        //[SerializeField]
-        //BookmarkAndHistoryWindowSettings settings = new BookmarkAndHistoryWindowSettings( );
+        [SerializeField]
+        BookmarkAndHistoryWindowSettings settings = new BookmarkAndHistoryWindowSettings( );
 
         ReorderableList reorderableList_Bookmark;
         ReorderableList reorderableList_History;
@@ -39,9 +39,14 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
 
 
         private void OnDisable( ) {
+            Save( );
+        }
+        void Save( ) {
+            settings.Save( );
+            bookmark.settings = settings;
             bookmark.Save( );
+            history.settings = settings;
             history.Save( );
-            //settings.Save( );
         }
 
         void drawElementCallback( ReorderableList reorderableList, bool invert, bool keepHistoryOrder, Rect rowRect, int index, bool isActive, bool isFocused ) {
@@ -83,11 +88,16 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             }
         }
 
+        private void Load( ) {
+            settings.Load( );
+            bookmark.settings = settings;
+            bookmark.Load( );
+            history.settings = settings;
+            history.Load( );
+        }
         private void OnEnable( ) {
             Content_Star = EditorGUIUtility.IconContent( "Favorite" );
-            bookmark.Load( );
-            history.Load( );
-            //settings.Load( );
+            Load( );
 
             reorderableList_Bookmark = new ReorderableList(
                 elements: bookmark.Bookmark,
@@ -355,6 +365,18 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         }
         private void OnGUI( ) {
             // EditorGUILayout.LabelField( "Prev Selected", prevSelectedPath );
+
+            if ( settings.debug ) {
+                EditorGUILayout.LabelField( "Debug Mode Enabled", EditorStyles.boldLabel );
+                using ( new EditorGUILayout.HorizontalScope( ) ) {
+                    if ( GUILayout.Button( "Save" ) ) {
+                        Save( );
+                    }
+                    if ( GUILayout.Button( "Load" ) ) {
+                        Load( );
+                    }
+                }
+            }
 
             EditorGUILayout.LabelField( "Bookmark", EditorStyles.boldLabel );
             scroll_Bookmark = EditorGUILayout.BeginScrollView( scroll_Bookmark, GUILayout.MinHeight( 300 ) );
