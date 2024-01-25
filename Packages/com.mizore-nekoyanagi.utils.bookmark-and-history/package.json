@@ -1,6 +1,6 @@
 {
   "name": "com.mizore-nekoyanagi.utils.bookmark-and-history",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "displayName": "BookmarkAndHistory",
   "description": "選択したファイル／フォルダの履歴を表示したり、ブックマークしたりできるウィンドウを追加します。",
   "author": {
