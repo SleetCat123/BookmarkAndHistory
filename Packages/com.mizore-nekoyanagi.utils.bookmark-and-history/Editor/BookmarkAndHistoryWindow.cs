@@ -217,7 +217,8 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
                             remove = true;
                         } else {
                             // 確認メッセージ
-                            var text = $"{path}\nをブックマークから削除しますか？";
+                            var label = bookmark.GetLabel( path );
+                            var text = $"{label}\n({path})\nをブックマークから削除しますか？";
                             remove = EditorUtility.DisplayDialog( "Remove Bookmark", text, "Remove", "Cancel" );
                         }
                         if ( remove ) {
