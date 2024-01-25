@@ -9,11 +9,19 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
     public class SelectionHistoryData : IEnumerable<ObjectWithPath>, ISerializationCallbackReceiver {
         const string PATH_HISTORY = "BookmarkAndHistory/MizoresSelectionHistory.json";
 
+        [System.NonSerialized]
+        public BookmarkAndHistoryWindowSettings settings;
+
         [System.NonSerialized] List<ObjectWithPath> historyObjects = new  List<ObjectWithPath>(CAPACITY);
         /// <summary>
         /// Serialize用
         /// </summary>
         [SerializeField] string[] history = new string[0];
+        public List<ObjectWithPath> History {
+            get {
+                return historyObjects;
+            }
+        }
 
         public ObjectWithPath this[int index] {
             get {
@@ -30,7 +38,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         const int MAX_HISOTRY = 50;
         public void Save( ) {
             var json = JsonUtility.ToJson( this, true );
-            Debug.Log( "History Saving: \n" + json );
+            if ( settings.debug ) {
+                Debug.Log( "History Saving: \n" + json );
+            }
             var dir = Path.GetDirectoryName( PATH_HISTORY );
             if ( !Directory.Exists( dir ) ) {
                 Directory.CreateDirectory( dir );
@@ -40,7 +50,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         public void Load( ) {
             if ( File.Exists( PATH_HISTORY ) ) {
                 string json = File.ReadAllText(PATH_HISTORY);
-                Debug.Log( "History Loading: \n" + json );
+                if ( settings.debug ) {
+                    Debug.Log( "History Loading: \n" + json );
+                }
                 JsonUtility.FromJsonOverwrite( json, this );
                 while ( MAX_HISOTRY < historyObjects.Count ) {
                     historyObjects.RemoveAt( 0 );

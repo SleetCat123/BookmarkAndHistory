@@ -6,9 +6,14 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
     public class BookmarkAndHistoryWindowSettings {
         const string PATH = "BookmarkAndHistory/Settings.json";
 
+        public bool debug = false;
+        public float bookmarkHeight = 300;
+
         public void Save( ) {
             var json = JsonUtility.ToJson( this, true );
-            Debug.Log( "Settings Saving: \n" + json );
+            if ( debug ) {
+                Debug.Log( "Settings Saving: \n" + json );
+            }
             var dir = Path.GetDirectoryName( PATH );
             if ( !Directory.Exists( dir ) ) {
                 Directory.CreateDirectory( dir );
@@ -18,7 +23,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         public void Load( ) {
             if ( File.Exists( PATH ) ) {
                 string json = File.ReadAllText(PATH);
-                Debug.Log( "Settings Loading: \n" + json );
+                if ( debug ) {
+                    Debug.Log( "Settings Loading: \n" + json );
+                }
                 JsonUtility.FromJsonOverwrite( json, this );
             }
         }
