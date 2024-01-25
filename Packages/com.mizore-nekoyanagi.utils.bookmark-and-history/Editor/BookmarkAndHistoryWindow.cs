@@ -29,6 +29,8 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
 
         string prevSelectedGUID;
 
+        int dragSeparatorIndex = -1;
+
         Vector2 scroll_Bookmark;
         Vector2 scroll_History;
 
@@ -425,11 +427,27 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             }
 
             EditorGUILayout.LabelField( "Bookmark", EditorStyles.boldLabel );
-            scroll_Bookmark = EditorGUILayout.BeginScrollView( scroll_Bookmark, GUILayout.MinHeight( 300 ) );
+            var height = Mathf.Clamp( settings.bookmarkHeight, 50, position.height - 200 );
+            scroll_Bookmark = EditorGUILayout.BeginScrollView( scroll_Bookmark, GUILayout.MinHeight( height ) );
             reorderableList_Bookmark.DoLayoutList( );
             EditorGUILayout.EndScrollView( );
 
-            EditorGUILayout.Separator( );
+            var separatorRect = EditorGUILayout.GetControlRect( GUILayout.Height( 10 ) );
+            EditorGUIUtility.AddCursorRect( separatorRect, MouseCursor.ResizeVertical );
+            // Bookmarkの高さを変更
+            if ( Event.current.type == EventType.MouseDrag ) {
+                if ( separatorRect.Contains( Event.current.mousePosition )){
+                    dragSeparatorIndex = 0;
+                    Event.current.Use( );
+                }
+                if ( dragSeparatorIndex == 0 ) {
+                    settings.bookmarkHeight += Event.current.delta.y;
+                    Event.current.Use( );
+                }
+            } else if ( Event.current.type == EventType.DragExited ) {
+                dragSeparatorIndex = -1;
+                Event.current.Use( );
+            }
 
             EditorGUILayout.LabelField( "History", EditorStyles.boldLabel );
             scroll_History = EditorGUILayout.BeginScrollView( scroll_History );

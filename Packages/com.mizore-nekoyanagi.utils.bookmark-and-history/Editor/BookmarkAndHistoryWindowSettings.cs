@@ -7,6 +7,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         const string PATH = "BookmarkAndHistory/Settings.json";
 
         public bool debug = false;
+        public float bookmarkHeight = 300;
 
         public void Save( ) {
             var json = JsonUtility.ToJson( this, true );
