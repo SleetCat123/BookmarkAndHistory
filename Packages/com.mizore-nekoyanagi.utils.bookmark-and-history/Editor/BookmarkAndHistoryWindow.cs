@@ -13,7 +13,6 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
         [MenuItem( "Mizore/Bookmark And History" )]
         public static void ShowWindow( ) {
             var window = (BookmarkAndHistoryWindow)EditorWindow.GetWindow(typeof(BookmarkAndHistoryWindow));
-            window.titleContent = new GUIContent( "Bookmark And History" );
             window.Show( );
         }
 
@@ -100,6 +99,9 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             history.Load( );
         }
         private void OnEnable( ) {
+            titleContent = new GUIContent( "Bookmark And History" );
+            minSize = new Vector2( 300, 300 );
+
             Content_Star = EditorGUIUtility.IconContent( "Favorite" );
             Load( );
 
