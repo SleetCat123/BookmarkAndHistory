@@ -77,7 +77,7 @@ namespace MizoreNekoyanagi.PublishUtil.BookmarkAndHistory {
             } else {
                 var result = DrawElement( rowRect, obj, keepHistoryOrder, folderWidth: 280 );
                 if ( result.dragAndDropTarget ) {
-                    reorderableList.Select( index );
+                    reorderableList.index = index;
                 }
             }
         }
